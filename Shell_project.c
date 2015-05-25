@@ -41,15 +41,14 @@ void my_sigchld(int signum){
             printf("%c[%d;%dm\nüsh > %c[%dm",27,1,32,27,0);
             
             block_SIGCHLD();
-            if(status_res == SUSPENDED)
-                modificar_job(lista, jb, 2);
-            else if (status_res == EXITED || status_res == SIGNALED){
+            modificar_job(lista, jb, 2);
+            if (status_res == EXITED || status_res == SIGNALED){
                 delete_job(lista, jb);
                 i--;
             }
             unblock_SIGCHLD();
-           }
         }//print_job_list(lista); //-> debug
+    }
     fflush(stdout);
     return;
 }
@@ -135,7 +134,6 @@ void put_job_in_foreground(job *j){
 int main(void){
 	char inputBuffer[MAX_LINE]; /* buffer to hold the command entered */
 	int background;             /* equals 1 if a command is followed by '&' */
-	int respawn;                /* equals 1 if a command is followed by '#' */
 	char *args[MAX_LINE/2];     /* command line (of 256) has max of 128 arguments */
 	int pid_fork, pid_wait;     /* pid for created and waited process */
 	int status;                 /* status returned by wait */
@@ -157,7 +155,7 @@ int main(void){
         ignore_terminal_signals(); //Ignorar señales ^C, ^Z, SIGTTIN, SIGTTOU...
         printf("%c[%d;%dm\nüsh > %c[%dm",27,1,32,27,0); //cambio de color, opcional
 		fflush(stdout);
-		get_command(inputBuffer, MAX_LINE, args, &background, &respawn);  /* get next command */
+		get_command(inputBuffer, MAX_LINE, args, &background);  /* get next command */
 		//printf("Comando= %s, bg= %d\n", inputBuffer, background);
 
 		if(args[0]==NULL) continue;   // if empty command
@@ -170,7 +168,7 @@ int main(void){
 			printf("- hola -> escribe \"Hola mundo\"\n");
 			printf("- com -> muestra los comandos disponibles\n");
 			printf("- cd [directorio] -> cambia el entorno al directorio indicado\n");
-			printf("- jobs -> muestra los trabajos ejecutados desde la üshell\n");
+			printf("- jobs -> muestra los trabajos ejecutados desde la üsh\n");
 			printf("- fg -> trae a foreground el primer proceso de la lista de trabajos\n");
 			printf("- fg [numJob] -> trae a foreground el trabajo indicado\n");
 			printf("- bg -> trae a background el primer proceso de la lista de trabajos\n");
@@ -235,7 +233,6 @@ int main(void){
                         printf("Trabajo actualmente detenido.\n");
                 }
                 else{
-
                     int numJob = atoi(args[1]);
                     aux = get_item_bypos(lista, numJob);
                     if(aux == NULL)
@@ -304,7 +301,7 @@ int main(void){
 				
 				//---------Meter en la lista de trabajos----------------//
 				if(pid_fork > 0){
-					nuevo = new_job(pid_fork, inputBuffer, respawn==1? RESPAWNABLE : background==1? BACKGROUND : FOREGROUND);
+					nuevo = new_job(pid_fork, inputBuffer, background==1? BACKGROUND : FOREGROUND);
 					block_SIGCHLD();
 					add_job(lista, nuevo);
 					unblock_SIGCHLD();
@@ -312,7 +309,7 @@ int main(void){
 					//printf("%d\n",list_size(lista)); //debug
 				}
 		
-				if(!background && !respawn){
+				if(!background){
 					put_job_in_foreground(nuevo);
 					tcsetattr(pid_terminal, TCSANOW, &conf_ini);
 				}else{

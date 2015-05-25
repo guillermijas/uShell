@@ -22,9 +22,9 @@ Some code adapted from "Fundamentos de Sistemas Operativos", Silberschatz et al.
 
 // ----------- ENUMERATIONS ---------------------------------------------
 enum status {SUSPENDED, SIGNALED, EXITED};
-enum job_state {FOREGROUND, BACKGROUND, STOPPED, RESPAWNABLE};
+enum job_state {FOREGROUND, BACKGROUND, STOPPED};
 static char* status_strings[] = { "Suspended","Signaled","Exited" };
-static char* state_strings[] = { "Foreground","Background","Stopped","Respawnable"};
+static char* state_strings[] = { "Foreground","Background","Stopped" };
 
 // ----------- JOB TYPE FOR JOB LIST ------------------------------------
 typedef struct job_
@@ -39,7 +39,7 @@ typedef struct job_
 //      PUBLIC FUNCTIONS
 // -----------------------------------------------------------------------
 
-void get_command(char inputBuffer[], int size, char *args[],int *background, int *respawn);
+void get_command(char inputBuffer[], int size, char *args[],int *background);
 
 job * new_job(pid_t pid, const char * command, enum job_state state);
 
