@@ -20,7 +20,7 @@ void put_in_foreground(job *j, int stopped);
 void put_job_in_background (job *j);
 void stop_job_in_background(job *j);
 void kill_job(job *j);
-void modificar_job(job *lista, job * j, int modifState);
+void modificar_job(job *lista, job * j, enum job_state modifState);
 
 /*Métodos*/
 
@@ -41,8 +41,9 @@ void my_sigchld(int signum){
             printf("%c[%d;%dm\nüsh > %c[%dm",27,1,32,27,0);
             
             block_SIGCHLD();
-            modificar_job(lista, jb, 2);
-            if (status_res == EXITED || status_res == SIGNALED){
+            if (status_res == SUSPENDED)
+                modificar_job(lista, jb, STOPPED);
+            else if (status_res == EXITED || status_res == SIGNALED){
                 delete_job(lista, jb);
                 i--;
             }
@@ -77,20 +78,10 @@ void kill_job(job *j){
     unblock_SIGCHLD();
 }
 
-void modificar_job(job *lista, job * j, int modifState){
+void modificar_job(job *lista, job * j, enum job_state modifState){
     block_SIGCHLD();
-    if(modifState==0){
-        j->state = FOREGROUND;
+        j->state = modifState;
         modify_job(lista, j);
-    }else if(modifState==1){
-        j->state = BACKGROUND;
-        modify_job(lista, j);
-    }else if(modifState==2){
-        j->state = STOPPED;
-        modify_job(lista, j);
-    }else{
-        printf("Error de estado");
-    }
     unblock_SIGCHLD();
 }
 
@@ -102,7 +93,7 @@ void put_job_in_foreground(job *j){
     
     pid_fork = j->pgid;
     if(j->state==STOPPED)
-        put_job_in_background (j);
+        put_job_in_background(j);
     
     /* Dar terminal al hijo */
     set_terminal(pid_fork);
@@ -118,10 +109,10 @@ void put_job_in_foreground(job *j){
     /*Sacarlo de la lista si EXITED o SIGNALED, si se suspende, dejarlo modificado*/
     block_SIGCHLD();
     aux = get_item_bypid(lista, pid_fork);
-    modificar_job(lista, aux, 2);
+    if (status_res == SUSPENDED)
+        modificar_job(lista, aux, STOPPED);
     if (status_res == EXITED || status_res == SIGNALED)
         delete_job(lista, aux);
-
     unblock_SIGCHLD();
 }
 
@@ -200,7 +191,7 @@ int main(void){
                     if(lista->next->state == BACKGROUND)
                         printf("El proceso ya se encuentra en background.\n");
                     else{
-                        modificar_job(lista, lista->next, 1);
+                        modificar_job(lista, lista->next, BACKGROUND);
                         put_job_in_background(lista->next);
                     }
                 }
@@ -213,7 +204,7 @@ int main(void){
                         if(aux->state == BACKGROUND)
                             printf("El proceso ya se encuentra en background.\n");
                         else{
-                            modificar_job(lista, aux, 1);
+                            modificar_job(lista, aux, BACKGROUND);
                             put_job_in_background(aux);
                         }
                     }
@@ -227,7 +218,7 @@ int main(void){
 			if(!empty_list(lista)){
                 if(args[1]==NULL){
                     if(lista->next->state != STOPPED){
-                        modificar_job(lista, lista->next, 2);
+                        modificar_job(lista, lista->next, STOPPED);
                         stop_job_in_background(lista->next);
                     }else
                         printf("Trabajo actualmente detenido.\n");
@@ -239,7 +230,7 @@ int main(void){
            		        printf("Error: No se encuentra el trabajo.\n");
                     else{
                         if(aux->state != STOPPED){
-                            modificar_job(lista, aux, 2);
+                            modificar_job(lista, aux, STOPPED);
                             stop_job_in_background(aux);
                         }else
                             printf("Trabajo actualmente detenido.\n");
