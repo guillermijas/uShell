@@ -125,6 +125,7 @@ void put_job_in_foreground(job *j){
 int main(void){
 	char inputBuffer[MAX_LINE]; /* buffer to hold the command entered */
 	int background;             /* equals 1 if a command is followed by '&' */
+	int respawn;         /* equals 1 if a command is followed by '#' */
 	char *args[MAX_LINE/2];     /* command line (of 256) has max of 128 arguments */
 	int pid_fork, pid_wait;     /* pid for created and waited process */
 	int status;                 /* status returned by wait */
@@ -146,7 +147,7 @@ int main(void){
         ignore_terminal_signals(); //Ignorar señales ^C, ^Z, SIGTTIN, SIGTTOU...
         printf("%c[%d;%dm\nüsh > %c[%dm",27,1,32,27,0); //cambio de color, opcional
 		fflush(stdout);
-		get_command(inputBuffer, MAX_LINE, args, &background);  /* get next command */
+		get_command(inputBuffer, MAX_LINE, args, &background, &respawn);  /* get next command */
 		//printf("Comando= %s, bg= %d\n", inputBuffer, background);
 
 		if(args[0]==NULL) continue;   // if empty command
@@ -292,7 +293,7 @@ int main(void){
 				
 				//---------Meter en la lista de trabajos----------------//
 				if(pid_fork > 0){
-					nuevo = new_job(pid_fork, inputBuffer, background==1? BACKGROUND : FOREGROUND);
+					nuevo = new_job(pid_fork, inputBuffer, respawn==1? RESPAWNABLE : background==1? BACKGROUND : FOREGROUND);
 					block_SIGCHLD();
 					add_job(lista, nuevo);
 					unblock_SIGCHLD();

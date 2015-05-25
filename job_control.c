@@ -21,7 +21,7 @@ Some code adapted from "Fundamentos de Sistemas Operativos", Silberschatz et al.
 //  null-terminated string.
 // -----------------------------------------------------------------------
 
-void get_command(char inputBuffer[], int size, char *args[],int *background)
+void get_command(char inputBuffer[], int size, char *args[],int *background, int *respawn)
 {
 	int length, /* # of characters in the command line */
 		i,      /* loop index for accessing inputBuffer array */
@@ -30,6 +30,7 @@ void get_command(char inputBuffer[], int size, char *args[],int *background)
 
 	ct = 0;
 	*background=0;
+	*respawn=0;
 
 	/* read what the user enters on the command line */
 	length = read(STDIN_FILENO, inputBuffer, size);  
@@ -85,6 +86,18 @@ void get_command(char inputBuffer[], int size, char *args[],int *background)
 				args[ct] = NULL; /* no more arguments to this command */
 				i=length; // make sure the for loop ends now
 
+			}
+			else if (inputBuffer[i] == '#') // spawnable indicator
+			{
+				*respawn  = 1;
+				if (start != -1)
+				{
+					args[ct] = &inputBuffer[start];     
+					ct++;
+				}
+				inputBuffer[i] = '\0';
+				args[ct] = NULL; /* no more arguments to this command */
+				i=length; // make sure the for loop ends now
 			}
 			else if (start == -1) start = i;  // start of new argument
 		}  // end switch
