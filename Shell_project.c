@@ -21,6 +21,8 @@ void put_job_in_background (job *j);
 void stop_job_in_background(job *j);
 void kill_job(job *j);
 void modificar_job(job *lista, job * j, enum job_state modifState);
+void add_proceso_listaTrabajo(job *nuevo, job *lista);
+
 
 /*Métodos*/
 
@@ -44,8 +46,12 @@ void my_sigchld(int signum){
             if (status_res == SUSPENDED)
                 modificar_job(lista, jb, STOPPED);
             else if (status_res == EXITED || status_res == SIGNALED){
-                delete_job(lista, jb);
-                i--;
+				if(jb->state==RESPAWNABLE){
+			/*_________________________________________*/
+                }else{
+					delete_job(lista, jb);
+					i--;
+				}
             }
             unblock_SIGCHLD();
         }//print_job_list(lista); //-> debug
@@ -116,7 +122,13 @@ void put_job_in_foreground(job *j){
     unblock_SIGCHLD();
 }
 
-
+void add_proceso_listaTrabajo(job *nuevo, job *lista){
+	block_SIGCHLD();
+	add_job(lista, nuevo);
+	unblock_SIGCHLD();
+	//print_job_list(lista); //debug
+	//printf("%d\n",list_size(lista)); //debug
+}
 
 // -----------------------------------------------------------------------
 //                            MAIN
@@ -290,28 +302,25 @@ int main(void){
 			}
 			else if(pid_fork > 0){
 				new_process_group(pid_fork);
-				
+				nuevo = new_job(pid_fork, inputBuffer, respawn==1? RESPAWNABLE : background==1? BACKGROUND : FOREGROUND);
+
 				//---------Meter en la lista de trabajos----------------//
-				if(pid_fork > 0){
-					nuevo = new_job(pid_fork, inputBuffer, respawn==1? RESPAWNABLE : background==1? BACKGROUND : FOREGROUND);
-					block_SIGCHLD();
-					add_job(lista, nuevo);
-					unblock_SIGCHLD();
-					//print_job_list(lista); //debug
-					//printf("%d\n",list_size(lista)); //debug
-				}
-		
-				if(!background){
+				add_proceso_listaTrabajo(nuevo, lista);
+						
+				if(!background && !respawn){
 					put_job_in_foreground(nuevo);
 					tcsetattr(pid_terminal, TCSANOW, &conf_ini);
-				}else{
+				}else if(background){
 					printf("Proceso en Background\n");
+					fflush(stdout);
+				}else if(respawn){
+					printf("Proceso respawnable en Background\n");
 					fflush(stdout);
 				}
 			}else{
 				new_process_group(getpid());
 				restore_terminal_signals();
-				if(!background)
+				if(!background && !respawn)
 					set_terminal(getpid());
 					
 				execvp(args[0], args);

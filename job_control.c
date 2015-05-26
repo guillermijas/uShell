@@ -168,8 +168,7 @@ int modify_job(job * list, job * item){
 // -----------------------------------------------------------------------
 /* busca y devuelve un elemento de la lista cuyo pid coincida con el indicado,
 devuelve NULL si no lo encuentra */
-job * get_item_bypid  (job * list, pid_t pid)
-{
+job * get_item_bypid  (job * list, pid_t pid){
 	job * aux=list;
 	while(aux->next!= NULL && aux->next->pgid != pid) 
 	    aux=aux->next;
@@ -216,7 +215,7 @@ enum status analyze_status(int status, int *info){
 	}
 	else
 	{
-		// el proceso termio
+		// el proceso termino
 		if (WIFSIGNALED (status))
 		{ *info=WTERMSIG (status); return(SIGNALED);}
 		else
@@ -227,8 +226,7 @@ enum status analyze_status(int status, int *info){
 
 // -----------------------------------------------------------------------
 // cambia la accion de las seÃ±ales relacionadas con el terminal
-void terminal_signals(void (*func) (int))
-{
+void terminal_signals(void (*func) (int)){
 	signal (SIGINT,  func); // crtl+c interrupt tecleado en el terminal
 	signal (SIGQUIT, func); // ctrl+\ quit tecleado en el terminal
 	signal (SIGTSTP, func); // crtl+z Stop tecleado en el terminal
@@ -237,8 +235,7 @@ void terminal_signals(void (*func) (int))
 }		
 
 // -----------------------------------------------------------------------
-void block_signal(int signal, int block)
-{
+void block_signal(int signal, int block){
 	/* declara e inicializa máscara */
 	sigset_t block_sigchld;
 	sigemptyset(&block_sigchld );
@@ -255,4 +252,3 @@ void block_signal(int signal, int block)
 	}
 }
 //se usa para bloquear el sigchld
-
