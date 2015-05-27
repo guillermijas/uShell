@@ -13,6 +13,7 @@
 #define MAX_LINE 256 
 
 job *lista;
+historial hist;
 /*Prototipos de los métodos*/
 
 void my_sigchld(int signum);
@@ -40,14 +41,12 @@ void my_sigchld(int signum){
         if(pid_wait == jb->pgid){
             status_res = analyze_status(istatus, &info);
             printf("Wait realizado para trabajo en background: %s, Estado: %s\n", jb->command, status_strings[status_res]);
-            printf("%c[%d;%dm\nüsh > %c[%dm",27,1,32,27,0);
-            
-            block_SIGCHLD();
+			block_SIGCHLD();
             if (status_res == SUSPENDED)
                 modificar_job(lista, jb, STOPPED);
             else if (status_res == EXITED || status_res == SIGNALED){
-				if(jb->state==RESPAWNABLE){
-			/*_________________________________________*/
+				if(jb->state == RESPAWNABLE){
+/*pedir ayuda con esto*/printf("Entra aqui, deberia abrirse otra ventana\n");
                 }else{
 					delete_job(lista, jb);
 					i--;
@@ -56,6 +55,7 @@ void my_sigchld(int signum){
             unblock_SIGCHLD();
         }//print_job_list(lista); //-> debug
     }
+	printf("%c[%d;%dm\nüsh > %c[%dm",27,1,32,27,0);
     fflush(stdout);
     return;
 }

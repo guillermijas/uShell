@@ -35,6 +35,14 @@ typedef struct job_
 	struct job_ *next; /* next job in the list */
 } job;
 
+// ----------- HISTORIAL TYPE ------------------------------------
+
+typedef struct historial_
+{
+	char * command; /* program name */
+	struct historial_ *next; /* next job in the list */
+} historial;
+
 // -----------------------------------------------------------------------
 //      PUBLIC FUNCTIONS
 // -----------------------------------------------------------------------
@@ -65,6 +73,15 @@ void terminal_signals(void (*func) (int));
 
 void block_signal(int signal, int block);
 
+//__________________AMPLIACION____________
+
+void print_historial(historial * hist, void (*print)(historial *));
+void add_historial (historial * hist, historial * item);
+historial * history_position(historial * hist, int n);
+void print_item_historial(historial * item);
+
+
+
 // -----------------------------------------------------------------------
 //      PUBLIC MACROS
 // -----------------------------------------------------------------------
@@ -73,6 +90,8 @@ void block_signal(int signal, int block);
 #define empty_list(list) 	 !(list->pgid)  // returns 1 (true) if the list is empty
 
 #define new_list(name) 			 new_job(0,name,FOREGROUND)  // name must be const char *
+#define new_historial(name) 	 new_historial(name)  // name must be const char *
+
 
 #define print_job_list(list) 	 print_list(list, print_item)
 

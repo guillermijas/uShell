@@ -21,8 +21,7 @@ Some code adapted from "Fundamentos de Sistemas Operativos", Silberschatz et al.
 //  null-terminated string.
 // -----------------------------------------------------------------------
 
-void get_command(char inputBuffer[], int size, char *args[],int *background, int *respawn)
-{
+void get_command(char inputBuffer[], int size, char *args[],int *background, int *respawn){
 	int length, /* # of characters in the command line */
 		i,      /* loop index for accessing inputBuffer array */
 		start,  /* index where beginning of next command parameter is */
@@ -36,8 +35,7 @@ void get_command(char inputBuffer[], int size, char *args[],int *background, int
 	length = read(STDIN_FILENO, inputBuffer, size);  
 
 	start = -1;
-	if (length == 0)
-	{
+	if (length == 0){
 		printf("\nBye\n");
 		exit(0);            /* ^d was entered, end of user command stream */
 	} 
@@ -47,14 +45,11 @@ void get_command(char inputBuffer[], int size, char *args[],int *background, int
 	}
 
 	/* examine every character in the inputBuffer */
-	for (i=0;i<length;i++) 
-	{ 
-		switch (inputBuffer[i])
-		{
+	for (i=0;i<length;i++){ 
+		switch (inputBuffer[i]){
 		case ' ':
 		case '\t' :               /* argument separators */
-			if(start != -1)
-			{
+			if(start != -1){
 				args[ct] = &inputBuffer[start];    /* set up pointer */
 				ct++;
 			}
@@ -63,8 +58,7 @@ void get_command(char inputBuffer[], int size, char *args[],int *background, int
 			break;
 
 		case '\n':                 /* should be the final char examined */
-			if (start != -1)
-			{
+			if (start != -1){
 				args[ct] = &inputBuffer[start];     
 				ct++;
 			}
@@ -109,8 +103,7 @@ void get_command(char inputBuffer[], int size, char *args[],int *background, int
 // -----------------------------------------------------------------------
 /* devuelve puntero a un nodo con sus valores inicializados,
 devuelve NULL si no pudo realizarse la reserva de memoria*/
-job * new_job(pid_t pid, const char * command, enum job_state state)
-{
+job * new_job(pid_t pid, const char * command, enum job_state state){
 	job * aux;
 	aux=(job *) malloc(sizeof(job));
 	aux->pgid=pid;
@@ -120,26 +113,23 @@ job * new_job(pid_t pid, const char * command, enum job_state state)
 	return aux;
 }
 
+
 // -----------------------------------------------------------------------
 /* inserta elemento en la cabeza de la lista */
-void add_job (job * list, job * item)
-{
+void add_job (job * list, job * item){
 	job * aux=list->next;
 	list->next=item;
 	item->next=aux;
 	list->pgid++;
-
 }
 
 // -----------------------------------------------------------------------
 /* elimina el elemento indicado de la lista 
 devuelve 0 si no pudo realizarse con exito */
-int delete_job(job * list, job * item)
-{
+int delete_job(job * list, job * item){
 	job * aux=list;
 	while(aux->next!= NULL && aux->next!= item) aux=aux->next;
-	if(aux->next)
-	{
+	if(aux->next){
 		aux->next=item->next;
 		free(item->command);
 		free(item);
@@ -252,3 +242,76 @@ void block_signal(int signal, int block){
 	}
 }
 //se usa para bloquear el sigchld
+
+
+
+
+
+
+
+// -----------------------------------------------------------------------
+//                            AMPLIACION
+// -----------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+// -----------------------------------------------------------------------
+/* devuelve puntero a un nodo con sus valores inicializados,
+devuelve NULL si no pudo realizarse la reserva de memoria*/
+historial * new_historial(const char * command){
+	historial * aux;
+	aux=(historial *) malloc(sizeof(historial));
+	aux->command=strdup(command);
+	aux->next=NULL;
+	return aux;
+}
+
+// -----------------------------------------------------------------------
+/*recorre el historial */
+void print_historial(historial * hist, void (*print)(historial *)){
+	int n=1;
+	historial * aux = hist;
+	printf("Contents of %s:\n",hist->command);
+	while(aux->next!= NULL){
+		printf(" [%d] ",n);
+		print(aux->next);
+		n++;
+		aux=aux->next;
+	}
+}
+
+
+// -----------------------------------------------------------------------
+/* inserta elemento en la cabeza de la lista */
+void add_historial (historial * hist, historial * item){
+	historial * aux = hist;
+	while(aux->next!= NULL)
+		aux  = aux->next;
+	aux->next = item;
+	item->next = NULL; 
+}
+
+
+// -----------------------------------------------------------------------
+historial * history_position(historial * hist, int n){
+	historial * aux = hist;
+	if(n<1) return NULL;
+	n--;
+	while(aux->next!= NULL && n){
+		 aux=aux->next; 
+		 n--;
+	}
+	return aux->next;
+}
+
+// -----------------------------------------------------------------------
+/*imprime una linea en el terminal con los datos del elemento: pid, nombre ... */
+void print_item_historial(historial * item){
+	printf("%s\n", item->command);
+}
