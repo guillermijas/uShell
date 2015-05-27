@@ -23,9 +23,9 @@ Some code adapted from "Fundamentos de Sistemas Operativos", Silberschatz et al.
 
 void get_command(char inputBuffer[], int size, char *args[],int *background, int *respawn){
 	int length, /* # of characters in the command line */
-		i,      /* loop index for accessing inputBuffer array */
-		start,  /* index where beginning of next command parameter is */
-		ct;     /* index of where to place the next parameter into args[] */
+	i,      /* loop index for accessing inputBuffer array */
+	start,  /* index where beginning of next command parameter is */
+	ct;     /* index of where to place the next parameter into args[] */
 
 	ct = 0;
 	*background=0;
@@ -161,7 +161,7 @@ devuelve NULL si no lo encuentra */
 job * get_item_bypid  (job * list, pid_t pid){
 	job * aux=list;
 	while(aux->next!= NULL && aux->next->pgid != pid) 
-	    aux=aux->next;
+		aux=aux->next;
 	return aux->next;
 }
 
@@ -211,7 +211,6 @@ enum status analyze_status(int status, int *info){
 		else
 		{ *info=WEXITSTATUS(status); return(EXITED);}
 	}
-	return;
 }
 
 // -----------------------------------------------------------------------
@@ -274,22 +273,26 @@ historial * new_historial(const char * command){
 
 // -----------------------------------------------------------------------
 /*recorre el historial */
-void print_historial(historial * hist, void (*print)(historial *)){
+void print_historial(historial * hist){
 	int n=1;
 	historial * aux = hist;
-	printf("Contents of %s:\n",hist->command);
-	while(aux->next!= NULL){
-		printf(" [%d] ",n);
-		print(aux->next);
-		n++;
+	printf("%s:\n",aux->command);
+	do{
 		aux=aux->next;
-	}
+		printf(" [%d] ",n);
+		char *comando = aux->command;
+		printf("%s\n", comando);
+		n++;
+	}while(aux->next!= NULL);
+
 }
+
 
 
 // -----------------------------------------------------------------------
 /* inserta elemento en la cabeza de la lista */
-void add_historial (historial * hist, historial * item){
+void add_to_historial(historial * hist, char * command){
+	historial * item = new_historial(command);
 	historial * aux = hist;
 	while(aux->next!= NULL)
 		aux  = aux->next;
@@ -304,8 +307,8 @@ historial * history_position(historial * hist, int n){
 	if(n<1) return NULL;
 	n--;
 	while(aux->next!= NULL && n){
-		 aux=aux->next; 
-		 n--;
+		aux=aux->next;
+		n--;
 	}
 	return aux->next;
 }

@@ -27,8 +27,7 @@ static char* status_strings[] = { "Suspended","Signaled","Exited" };
 static char* state_strings[] = { "Foreground","Background","Stopped","Respawnable"};
 
 // ----------- JOB TYPE FOR JOB LIST ------------------------------------
-typedef struct job_
-{
+typedef struct job_{
 	pid_t pgid; /* group id = process lider id */
 	char * command; /* program name */
 	enum job_state state;
@@ -37,10 +36,9 @@ typedef struct job_
 
 // ----------- HISTORIAL TYPE ------------------------------------
 
-typedef struct historial_
-{
-	char * command; /* program name */
-	struct historial_ *next; /* next job in the list */
+typedef struct historial_{
+	char * command;
+	struct historial_ *next;
 } historial;
 
 // -----------------------------------------------------------------------
@@ -48,17 +46,11 @@ typedef struct historial_
 // -----------------------------------------------------------------------
 
 void get_command(char inputBuffer[], int size, char *args[],int *background, int *respawn);
-
 job * new_job(pid_t pid, const char * command, enum job_state state);
-
 void add_job (job * list, job * item);
-
 int delete_job(job * list, job * item);
-
 job * get_item_bypid  (job * list, pid_t pid);
-
 job * get_item_bypos( job * list, int n);
-
 enum status analyze_status(int status, int *info);
 
 // -----------------------------------------------------------------------
@@ -66,17 +58,14 @@ enum status analyze_status(int status, int *info);
 // -----------------------------------------------------------------------
 
 void print_item(job * item);
-
 void print_list(job * list, void (*print)(job *));
-
 void terminal_signals(void (*func) (int));
-
 void block_signal(int signal, int block);
 
 //__________________AMPLIACION____________
 
-void print_historial(historial * hist, void (*print)(historial *));
-void add_historial (historial * hist, historial * item);
+void print_historial(historial * hist);
+void add_to_historial(historial * hist, char * command);
 historial * history_position(historial * hist, int n);
 void print_item_historial(historial * item);
 
@@ -90,7 +79,7 @@ void print_item_historial(historial * item);
 #define empty_list(list) 	 !(list->pgid)  // returns 1 (true) if the list is empty
 
 #define new_list(name) 			 new_job(0,name,FOREGROUND)  // name must be const char *
-#define new_historial(name) 	 new_historial(name)  // name must be const char *
+#define nuevo_historial(name) 	 new_historial(name)  // name must be const char *
 
 
 #define print_job_list(list) 	 print_list(list, print_item)

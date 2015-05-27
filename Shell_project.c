@@ -1,8 +1,8 @@
 /**
-*
-*   Guillermo Mora Cordero, 2º Informática A, üshell.
-*
-**/
+ *
+ *   Guillermo Mora Cordero, 2º Informática A, üshell.
+ *
+ **/
 
 #include "job_control.h"
 #include <stdio.h>
@@ -13,7 +13,7 @@
 #define MAX_LINE 256 
 
 job *lista;
-historial hist;
+historial *hist;
 /*Prototipos de los métodos*/
 
 void my_sigchld(int signum);
@@ -28,98 +28,98 @@ void add_proceso_listaTrabajo(job *nuevo, job *lista);
 /*Métodos*/
 
 void my_sigchld(int signum){
-    
-    int i, istatus, info, pid_wait;
-    enum status status_res;
-    job* jb, aux;
-	
+
+	int i, istatus, info, pid_wait;
+	enum status status_res;
+	job* jb, aux;
+
 	printf("SIGCHLD recibido\n");
 	for(i = 1; i<=list_size(lista); i++){
-        jb = get_item_bypos(lista, i);
-        pid_wait = waitpid(jb->pgid, &istatus, WUNTRACED | WNOHANG);
-                
-        if(pid_wait == jb->pgid){
-            status_res = analyze_status(istatus, &info);
-            printf("Wait realizado para trabajo en background: %s, Estado: %s\n", jb->command, status_strings[status_res]);
+		jb = get_item_bypos(lista, i);
+		pid_wait = waitpid(jb->pgid, &istatus, WUNTRACED | WNOHANG);
+
+		if(pid_wait == jb->pgid){
+			status_res = analyze_status(istatus, &info);
+			printf("Wait realizado para trabajo en background: %s, Estado: %s\n", jb->command, status_strings[status_res]);
 			block_SIGCHLD();
-            if (status_res == SUSPENDED)
-                modificar_job(lista, jb, STOPPED);
-            else if (status_res == EXITED || status_res == SIGNALED){
+			if (status_res == SUSPENDED)
+				modificar_job(lista, jb, STOPPED);
+			else if (status_res == EXITED || status_res == SIGNALED){
 				if(jb->state == RESPAWNABLE){
-/*pedir ayuda con esto*/printf("Entra aqui, deberia abrirse otra ventana\n");
-                }else{
+					/*pedir ayuda con esto*/printf("Entra aqui, deberia abrirse otra ventana\n");
+				}else{
 					delete_job(lista, jb);
 					i--;
 				}
-            }
-            unblock_SIGCHLD();
-        }//print_job_list(lista); //-> debug
-    }
+			}
+			unblock_SIGCHLD();
+		}//print_job_list(lista); //-> debug
+	}
 	printf("%c[%d;%dm\nüsh > %c[%dm",27,1,32,27,0);
-    fflush(stdout);
-    return;
+	fflush(stdout);
+	return;
 }
 
 void put_job_in_background (job *j){
-  /* Enviar SIGCONT */
-    block_SIGCHLD();
-    if (killpg(j->pgid, SIGCONT))
-      perror ("kill (SIGCONT)");
-    block_SIGCHLD();
+	/* Enviar SIGCONT */
+	block_SIGCHLD();
+	if (killpg(j->pgid, SIGCONT))
+		perror ("kill (SIGCONT)");
+	block_SIGCHLD();
 }
 
 void stop_job_in_background(job *j){
-  /* Enviar SIGSTOP */
-    block_SIGCHLD();
-    if (killpg(j->pgid, SIGSTOP))
-      perror ("kill (SIGSTOP)");
-    block_SIGCHLD();
+	/* Enviar SIGSTOP */
+	block_SIGCHLD();
+	if (killpg(j->pgid, SIGSTOP))
+		perror ("kill (SIGSTOP)");
+	block_SIGCHLD();
 }
 
 void kill_job(job *j){
-  /* Enviar SIGKILL */
-    block_SIGCHLD();
-    if (killpg(j->pgid, SIGKILL))
-      perror ("kill (SIGKILL)");     
-    unblock_SIGCHLD();
+	/* Enviar SIGKILL */
+	block_SIGCHLD();
+	if (killpg(j->pgid, SIGKILL))
+		perror ("kill (SIGKILL)");
+	unblock_SIGCHLD();
 }
 
 void modificar_job(job *lista, job * j, enum job_state modifState){
-    block_SIGCHLD();
-        j->state = modifState;
-        modify_job(lista, j);
-    unblock_SIGCHLD();
+	block_SIGCHLD();
+	j->state = modifState;
+	modify_job(lista, j);
+	unblock_SIGCHLD();
 }
 
 void put_job_in_foreground(job *j){
-    int pid_fork;     
+	int pid_fork;
 	int estado, infor;
 	enum status status_res;
-    job *nuevo, *aux;
-    
-    pid_fork = j->pgid;
-    if(j->state==STOPPED)
-        put_job_in_background(j);
-    
-    /* Dar terminal al hijo */
-    set_terminal(pid_fork);
-   
-    /* Padre espera SIGCHLD */
-    waitpid(j->pgid, &estado, WUNTRACED);
-    ignore_terminal_signals();
-    set_terminal(getpid()); /*Recupera por el ignore_signals, que incluyen SIGTTIN y SIGTTOU*/
-    
-    status_res = analyze_status(estado ,&infor);
-    printf("Foreground pid: %d, Orden: %s, Estado: %s\n", pid_fork, j->command, status_strings[status_res]);
+	job *nuevo, *aux;
 
-    /*Sacarlo de la lista si EXITED o SIGNALED, si se suspende, dejarlo modificado*/
-    block_SIGCHLD();
-    aux = get_item_bypid(lista, pid_fork);
-    if (status_res == SUSPENDED)
-        modificar_job(lista, aux, STOPPED);
-    if (status_res == EXITED || status_res == SIGNALED)
-        delete_job(lista, aux);
-    unblock_SIGCHLD();
+	pid_fork = j->pgid;
+	if(j->state==STOPPED)
+		put_job_in_background(j);
+
+	/* Dar terminal al hijo */
+	set_terminal(pid_fork);
+
+	/* Padre espera SIGCHLD */
+	waitpid(j->pgid, &estado, WUNTRACED);
+	ignore_terminal_signals();
+	set_terminal(getpid()); /*Recupera por el ignore_signals, que incluyen SIGTTIN y SIGTTOU*/
+
+	status_res = analyze_status(estado ,&infor);
+	printf("Foreground pid: %d, Orden: %s, Estado: %s\n", pid_fork, j->command, status_strings[status_res]);
+
+	/*Sacarlo de la lista si EXITED o SIGNALED, si se suspende, dejarlo modificado*/
+	block_SIGCHLD();
+	aux = get_item_bypid(lista, pid_fork);
+	if (status_res == SUSPENDED)
+		modificar_job(lista, aux, STOPPED);
+	if (status_res == EXITED || status_res == SIGNALED)
+		delete_job(lista, aux);
+	unblock_SIGCHLD();
 }
 
 void add_proceso_listaTrabajo(job *nuevo, job *lista){
@@ -143,30 +143,32 @@ int main(void){
 	int status;                 /* status returned by wait */
 	enum status status_res;     /* status processed by analyze_status() */
 	int info;				    /* info processed by analyze_status() */
-    job *nuevo, *aux;
+	job *nuevo, *aux;
 	struct termios conf_ini; 	/*aqui se guarda la configuracion de terminal*/
-    int pid_terminal;
-    int bucle = 1;			
-    
-    pid_terminal = STDIN_FILENO;
-    tcgetattr(pid_terminal, &conf_ini);
-    printf("\e[1;1H\e[2J"); // "Clear" terminal (en realidad pone varios espacios y baja el scroll)
-    printf("ü shell. Para ver los comandos disponibles, \"com\"\n");
-    signal(SIGCHLD, my_sigchld); 
-    lista = new_list("Lista de trabajos");
-   
+	int pid_terminal;
+	int bucle = 1;
+
+	pid_terminal = STDIN_FILENO;
+	tcgetattr(pid_terminal, &conf_ini);
+	printf("\e[1;1H\e[2J"); // "Clear" terminal (en realidad pone varios espacios y baja el scroll)
+	printf("ü shell. Para ver los comandos disponibles, \"com\"\n");
+	signal(SIGCHLD, my_sigchld);
+	lista = new_list("Lista de trabajos");
+	hist = nuevo_historial("Historial de Procesos");
+
+
 	while (bucle){  /* Program terminates normally inside get_command() after ^D is typed*/
-        ignore_terminal_signals(); //Ignorar señales ^C, ^Z, SIGTTIN, SIGTTOU...
-        printf("%c[%d;%dm\nüsh > %c[%dm",27,1,32,27,0); //cambio de color, opcional
+		ignore_terminal_signals(); //Ignorar señales ^C, ^Z, SIGTTIN, SIGTTOU...
+		printf("%c[%d;%dm\nüsh > %c[%dm",27,1,32,27,0); //cambio de color, opcional
 		fflush(stdout);
 		get_command(inputBuffer, MAX_LINE, args, &background, &respawn);  /* get next command */
 		//printf("Comando= %s, bg= %d\n", inputBuffer, background);
-
+		add_to_historial(hist, args[0]);
 		if(args[0]==NULL) continue;   // if empty command
 
 		else if(strcmp(args[0], "hola") == 0)
 			printf("Hola mundo\n");
-        
+
 		else if(strcmp(args[0], "com") == 0){
 			printf("Comandos disponibles:\n");
 			printf("- hola -> escribe \"Hola mundo\"\n");
@@ -183,116 +185,128 @@ int main(void){
 			printf("- kill [numJob] -> fuerza el cierre del trabajo indicado\n");
 			printf("- exit -> cierra todos los trabajos y sale de üshell\n");
 		}
-		
-        else if(strcmp(args[0], "cd") == 0){
-		    if(args[1]==NULL){
-		        printf("Error: Es necesario indicar el directorio.\n");
-		    }
-		    else{
-		       if (chdir(args[1])!=0){
-		            perror("Error de directorio");
-		       }
-		    }
-	    }
-	    
-        else if(strcmp(args[0], "jobs")==0)
-            print_job_list(lista);
-	    
-        else if(strcmp(args[0], "bg") == 0){
-            if(!empty_list(lista)){
-                if(args[1]==NULL){
-                    if(lista->next->state == BACKGROUND)
-                        printf("El proceso ya se encuentra en background.\n");
-                    else{
-                        modificar_job(lista, lista->next, BACKGROUND);
-                        put_job_in_background(lista->next);
-                    }
-                }
-                else{
-                    int numJob = atoi(args[1]);
-                    aux = get_item_bypos(lista, numJob);
-                    if(aux == NULL){
-           		        printf("Error: No se encuentra el trabajo.\n");
-                    }else{
-                        if(aux->state == BACKGROUND)
-                            printf("El proceso ya se encuentra en background.\n");
-                        else{
-                            modificar_job(lista, aux, BACKGROUND);
-                            put_job_in_background(aux);
-                        }
-                    }
-                }
-            }else{
-                printf("Error: lista de trabajos vacia.\n");
-            }
-		}
-    
-        else if(strcmp(args[0], "stop") == 0){
-			if(!empty_list(lista)){
-                if(args[1]==NULL){
-                    if(lista->next->state != STOPPED){
-                        modificar_job(lista, lista->next, STOPPED);
-                        stop_job_in_background(lista->next);
-                    }else
-                        printf("Trabajo actualmente detenido.\n");
-                }
-                else{
-                    int numJob = atoi(args[1]);
-                    aux = get_item_bypos(lista, numJob);
-                    if(aux == NULL)
-           		        printf("Error: No se encuentra el trabajo.\n");
-                    else{
-                        if(aux->state != STOPPED){
-                            modificar_job(lista, aux, STOPPED);
-                            stop_job_in_background(aux);
-                        }else
-                            printf("Trabajo actualmente detenido.\n");
-                    }
-                }
-            }else{
-                printf("Error: lista de trabajos vacia.\n");
-            }
-		}
-        
-        else if(strcmp(args[0], "fg") == 0){
-			if(!empty_list(lista)){
-                if(args[1]==NULL)
-                     put_job_in_foreground(lista->next); //no hace falta comprobar si el primero esta en fg
-                else{
-                    int numJob = atoi(args[1]);
-                    aux = get_item_bypos(lista, numJob);
-                    if(aux == NULL)
-           		        printf("Error: No se encuentra el trabajo.\n");
-                    else
-                         put_job_in_foreground(aux);
-                }
-            }else{
-                printf("Error: lista de trabajos vacia.\n");
-            }
-		}
-		
-		else if(strcmp(args[0], "kill") == 0){
-			if(!empty_list(lista)){
-                if(args[1]==NULL)
-                     kill_job(lista->next);
-                else{
-                    int numJob = atoi(args[1]);
-                    aux = get_item_bypos(lista, numJob);
-                    if(aux == NULL)
-           		        printf("Error: No se encuentra el trabajo.\n");
-                    else
-                         kill_job(aux);
-                }
-            }else{
-                printf("Error: lista de trabajos vacia.\n");
-            }
+
+		else if(strcmp(args[0], "cd") == 0){
+			if(args[1]==NULL){
+				printf("Error: Es necesario indicar el directorio.\n");
+			}
+			else{
+				if (chdir(args[1])!=0){
+					perror("Error de directorio");
+				}
+			}
 		}
 
-        else if(strcmp(args[0], "exit")==0){
-            while(!empty_list(lista))
-                kill_job(lista->next);
-            bucle = 0; 
-        }
+		else if(strcmp(args[0], "jobs")==0)
+			print_job_list(lista);
+
+		else if(strcmp(args[0], "bg") == 0){
+			if(!empty_list(lista)){
+				if(args[1]==NULL){
+					if(lista->next->state == BACKGROUND)
+						printf("El proceso ya se encuentra en background.\n");
+					else{
+						modificar_job(lista, lista->next, BACKGROUND);
+						put_job_in_background(lista->next);
+					}
+				}
+				else{
+					int numJob = atoi(args[1]);
+					aux = get_item_bypos(lista, numJob);
+					if(aux == NULL){
+						printf("Error: No se encuentra el trabajo.\n");
+					}else{
+						if(aux->state == BACKGROUND)
+							printf("El proceso ya se encuentra en background.\n");
+						else{
+							modificar_job(lista, aux, BACKGROUND);
+							put_job_in_background(aux);
+						}
+					}
+				}
+			}else{
+				printf("Error: lista de trabajos vacia.\n");
+			}
+		}
+
+		else if(strcmp(args[0], "stop") == 0){
+			if(!empty_list(lista)){
+				if(args[1]==NULL){
+					if(lista->next->state != STOPPED){
+						modificar_job(lista, lista->next, STOPPED);
+						stop_job_in_background(lista->next);
+					}else
+						printf("Trabajo actualmente detenido.\n");
+				}
+				else{
+					int numJob = atoi(args[1]);
+					aux = get_item_bypos(lista, numJob);
+					if(aux == NULL)
+						printf("Error: No se encuentra el trabajo.\n");
+					else{
+						if(aux->state != STOPPED){
+							modificar_job(lista, aux, STOPPED);
+							stop_job_in_background(aux);
+						}else
+							printf("Trabajo actualmente detenido.\n");
+					}
+				}
+			}else{
+				printf("Error: lista de trabajos vacia.\n");
+			}
+		}
+
+		else if(strcmp(args[0], "fg") == 0){
+			if(!empty_list(lista)){
+				if(args[1]==NULL)
+					put_job_in_foreground(lista->next); //no hace falta comprobar si el primero esta en fg
+				else{
+					int numJob = atoi(args[1]);
+					aux = get_item_bypos(lista, numJob);
+					if(aux == NULL)
+						printf("Error: No se encuentra el trabajo.\n");
+					else
+						put_job_in_foreground(aux);
+				}
+			}else{
+				printf("Error: lista de trabajos vacia.\n");
+			}
+		}
+
+		else if(strcmp(args[0], "kill") == 0){
+			if(!empty_list(lista)){
+				if(args[1]==NULL)
+					kill_job(lista->next);
+				else{
+					int numJob = atoi(args[1]);
+					aux = get_item_bypos(lista, numJob);
+					if(aux == NULL)
+						printf("Error: No se encuentra el trabajo.\n");
+					else
+						kill_job(aux);
+				}
+			}else{
+				printf("Error: lista de trabajos vacia.\n");
+			}
+		}
+
+		else if(strcmp(args[0], "exit")==0){
+			while(!empty_list(lista))
+				kill_job(lista->next);
+			bucle = 0;
+		}
+
+		else if(strcmp(args[0], "historial") == 0){
+			if(args[1]==NULL)
+				print_historial(hist);
+			else{
+				int numHist = atoi(args[1]);
+				if(history_position(hist, numHist)!=NULL)
+					print_item_historial(history_position(hist, numHist));
+				else
+					printf("El historial no tiene esa entrada");
+			}
+		}
 
 		else{ // EJECUTA
 
@@ -306,7 +320,7 @@ int main(void){
 
 				//---------Meter en la lista de trabajos----------------//
 				add_proceso_listaTrabajo(nuevo, lista);
-						
+
 				if(!background && !respawn){
 					put_job_in_foreground(nuevo);
 					tcsetattr(pid_terminal, TCSANOW, &conf_ini);
@@ -322,7 +336,7 @@ int main(void){
 				restore_terminal_signals();
 				if(!background && !respawn)
 					set_terminal(getpid());
-					
+				//add_historial(hist, args[0]);
 				execvp(args[0], args);
 				printf("Error, comando desconocido: %s. Fallo en execv\n", inputBuffer);
 				exit(EXIT_FAILURE);
