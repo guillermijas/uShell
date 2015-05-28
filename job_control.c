@@ -71,8 +71,7 @@ void get_command(char inputBuffer[], int size, char *args[],int *background, int
 			if (inputBuffer[i] == '&') // background indicator
 			{
 				*background  = 1;
-				if (start != -1)
-				{
+				if (start != -1){
 					args[ct] = &inputBuffer[start];     
 					ct++;
 				}
@@ -84,8 +83,7 @@ void get_command(char inputBuffer[], int size, char *args[],int *background, int
 			else if (inputBuffer[i] == '#') // spawnable indicator
 			{
 				*respawn  = 1;
-				if (start != -1)
-				{
+				if (start != -1){
 					args[ct] = &inputBuffer[start];     
 					ct++;
 				}
@@ -264,10 +262,10 @@ void block_signal(int signal, int block){
 /* devuelve puntero a un nodo con sus valores inicializados,
 devuelve NULL si no pudo realizarse la reserva de memoria*/
 historial * new_historial(const char * command){
-	historial * aux;
+	historial *aux;
 	aux=(historial *) malloc(sizeof(historial));
-	aux->command=strdup(command);
-	aux->next=NULL;
+	aux->command = strdup(command);
+	aux->next = NULL;
 	return aux;
 }
 
@@ -278,9 +276,10 @@ void print_historial(historial * hist){
 	historial * aux = hist;
 	printf("%s:\n",aux->command);
 	do{
+
 		aux=aux->next;
 		printf(" [%d] ",n);
-		char *comando = aux->command;
+		const char *comando = aux->command;
 		printf("%s\n", comando);
 		n++;
 	}while(aux->next!= NULL);

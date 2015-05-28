@@ -14,6 +14,7 @@
 
 job *lista;
 historial *hist;
+
 /*Prototipos de los métodos*/
 
 void my_sigchld(int signum);
@@ -51,11 +52,12 @@ void my_sigchld(int signum){
 					delete_job(lista, jb);
 					i--;
 				}
-			}
+		    }
 			unblock_SIGCHLD();
+			printf("%c[%d;%dm\nüsh > %c[%dm",27,1,32,27,0);
 		}//print_job_list(lista); //-> debug
 	}
-	printf("%c[%d;%dm\nüsh > %c[%dm",27,1,32,27,0);
+
 	fflush(stdout);
 	return;
 }
@@ -130,6 +132,17 @@ void add_proceso_listaTrabajo(job *nuevo, job *lista){
 	//printf("%d\n",list_size(lista)); //debug
 }
 
+ejecutarProceso(int pid, int background, int respawn, char *args[MAX_LINE/2], char inputBuffer[MAX_LINE]){
+    new_process_group(pid);
+    restore_terminal_signals();
+    if(!background && !respawn)
+	    set_terminal(getpid());
+	
+    execvp(args[0], args);
+    printf("Error, comando desconocido: %s. Fallo en execv\n", inputBuffer);
+    exit(EXIT_FAILURE);
+}
+
 // -----------------------------------------------------------------------
 //                            MAIN
 // -----------------------------------------------------------------------
@@ -154,7 +167,7 @@ int main(void){
 	printf("ü shell. Para ver los comandos disponibles, \"com\"\n");
 	signal(SIGCHLD, my_sigchld);
 	lista = new_list("Lista de trabajos");
-	hist = nuevo_historial("Historial de Procesos");
+	hist = new_historial("Historial de Procesos");
 
 
 	while (bucle){  /* Program terminates normally inside get_command() after ^D is typed*/
@@ -163,7 +176,7 @@ int main(void){
 		fflush(stdout);
 		get_command(inputBuffer, MAX_LINE, args, &background, &respawn);  /* get next command */
 		//printf("Comando= %s, bg= %d\n", inputBuffer, background);
-		add_to_historial(hist, args[0]);
+		add_to_historial(hist, *args);
 		if(args[0]==NULL) continue;   // if empty command
 
 		else if(strcmp(args[0], "hola") == 0)
@@ -183,6 +196,8 @@ int main(void){
 			printf("- stop [numJob] -> suspende el trabajo indicado\n");
 			printf("- kill -> fuerza el cierre del primer proceso de la lista de trabajos\n");
 			printf("- kill [numJob] -> fuerza el cierre del trabajo indicado\n");
+			printf("- historial -> muestra todo el historial");
+			printf("- historial [num] -> muestra la posicion [num] del historial");
 			printf("- exit -> cierra todos los trabajos y sale de üshell\n");
 		}
 
@@ -332,16 +347,14 @@ int main(void){
 					fflush(stdout);
 				}
 			}else{
-				new_process_group(getpid());
-				restore_terminal_signals();
-				if(!background && !respawn)
-					set_terminal(getpid());
-				//add_historial(hist, args[0]);
-				execvp(args[0], args);
-				printf("Error, comando desconocido: %s. Fallo en execv\n", inputBuffer);
-				exit(EXIT_FAILURE);
+				ejecutarProceso(getpid(), background, respawn, args, inputBuffer);
 			}// FIN EJECUTA
 		}
 	}
 	return 0;
 }
+
+
+
+
+

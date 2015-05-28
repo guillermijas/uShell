@@ -37,7 +37,7 @@ typedef struct job_{
 // ----------- HISTORIAL TYPE ------------------------------------
 
 typedef struct historial_{
-	char * command;
+	const char * command;
 	struct historial_ *next;
 } historial;
 
@@ -64,6 +64,7 @@ void block_signal(int signal, int block);
 
 //__________________AMPLIACION____________
 
+historial * new_historial(const char * command);
 void print_historial(historial * hist);
 void add_to_historial(historial * hist, char * command);
 historial * history_position(historial * hist, int n);
@@ -79,8 +80,6 @@ void print_item_historial(historial * item);
 #define empty_list(list) 	 !(list->pgid)  // returns 1 (true) if the list is empty
 
 #define new_list(name) 			 new_job(0,name,FOREGROUND)  // name must be const char *
-#define nuevo_historial(name) 	 new_historial(name)  // name must be const char *
-
 
 #define print_job_list(list) 	 print_list(list, print_item)
 
