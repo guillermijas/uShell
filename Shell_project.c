@@ -132,16 +132,6 @@ void add_proceso_listaTrabajo(job *nuevo, job *lista){
 	//printf("%d\n",list_size(lista)); //debug
 }
 
-ejecutarProceso(int pid, int background, int respawn, char *args[MAX_LINE/2], char inputBuffer[MAX_LINE]){
-    new_process_group(pid);
-    restore_terminal_signals();
-    if(!background && !respawn)
-	    set_terminal(getpid());
-	
-    execvp(args[0], args);
-    printf("Error, comando desconocido: %s. Fallo en execv\n", inputBuffer);
-    exit(EXIT_FAILURE);
-}
 
 // -----------------------------------------------------------------------
 //                            MAIN
@@ -347,14 +337,16 @@ int main(void){
 					fflush(stdout);
 				}
 			}else{
-				ejecutarProceso(getpid(), background, respawn, args, inputBuffer);
+                new_process_group(getpid());
+                restore_terminal_signals();
+                if(!background && !respawn)
+                    set_terminal(getpid());
+                execvp(args[0], args);
+                printf("Error, comando desconocido: %s. Fallo en execv\n", inputBuffer);
+                exit(EXIT_FAILURE);
 			}// FIN EJECUTA
 		}
 	}
 	return 0;
 }
-
-
-
-
 

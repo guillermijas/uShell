@@ -107,6 +107,14 @@ job * new_job(pid_t pid, const char * command, enum job_state state){
 	aux->pgid=pid;
 	aux->state=state;
 	aux->command=strdup(command);
+
+	/*
+	int i=0;
+	while(&argums[i]==NULL){
+	    aux->args[i]=strdup(argums[i]);
+	    i++;
+	}
+	*/
 	aux->next=NULL;
 	return aux;
 }
@@ -130,6 +138,7 @@ int delete_job(job * list, job * item){
 	if(aux->next){
 		aux->next=item->next;
 		free(item->command);
+		//free(item->args);
 		free(item);
 		list->pgid--;
 		return 1;
@@ -241,10 +250,7 @@ void block_signal(int signal, int block){
 //se usa para bloquear el sigchld
 
 
-
-
-
-
+ 
 
 // -----------------------------------------------------------------------
 //                            AMPLIACION
