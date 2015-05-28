@@ -276,6 +276,7 @@ void print_historial(historial * hist){
 	historial * aux = hist;
 	printf("%s:\n",aux->command);
 	do{
+
 		aux=aux->next;
 		printf(" [%d] ",n);
 		const char *comando = aux->command;
