@@ -31,10 +31,11 @@ typedef struct job_{
 	pid_t pgid; /* group id = process lider id */
 	char * command; /* program name */
 	enum job_state state;
+	//const char * argums;
 	struct job_ *next; /* next job in the list */
 } job;
 
-// ----------- HISTORIAL TYPE ------------------------------------
+// ----------- Linked List TYPE ------------------------------------
 
 typedef struct historial_{
 	const char * command;

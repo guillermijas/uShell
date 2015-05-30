@@ -15,6 +15,8 @@
 job *lista;
 historial *hist;
 
+char *args[MAX_LINE/2];
+
 /*Prototipos de los métodos*/
 
 void my_sigchld(int signum);
@@ -46,11 +48,30 @@ void my_sigchld(int signum){
 			if (status_res == SUSPENDED)
 				modificar_job(lista, jb, STOPPED);
 			else if (status_res == EXITED || status_res == SIGNALED){
-				if(jb->state == RESPAWNABLE){
-					/*pedir ayuda con esto*/printf("Entra aqui, deberia abrirse otra ventana\n");
-				}else{
-					delete_job(lista, jb);
-					i--;
+					
+				delete_job(lista, jb);
+				i--;
+				
+                if(jb->state == RESPAWNABLE){ 	
+
+                    int pid_fork;
+                    pid_fork = fork();
+                    if(pid_fork == -1){
+                        printf("Error en fork()\n");
+                    }
+                    else if(pid_fork > 0){
+                        new_process_group(pid_fork);
+                        jb = new_job(pid_fork, args[0], RESPAWNABLE);
+                        add_proceso_listaTrabajo(jb, lista);
+                        printf("Proceso respawnable en Background\n");
+                        fflush(stdout);
+                    }else{
+                        new_process_group(getpid());
+                        restore_terminal_signals();
+                        execvp(args[0], args);
+                        printf("Error, comando desconocido: %s. Fallo en execv\n", args[0]);
+                        exit(EXIT_FAILURE);
+                    }
 				}
 		    }
 			unblock_SIGCHLD();
@@ -141,7 +162,7 @@ int main(void){
 	char inputBuffer[MAX_LINE]; /* buffer to hold the command entered */
 	int background;             /* equals 1 if a command is followed by '&' */
 	int respawn;         /* equals 1 if a command is followed by '#' */
-	char *args[MAX_LINE/2];     /* command line (of 256) has max of 128 arguments */
+	//char *args[MAX_LINE/2];     /* command line (of 256) has max of 128 arguments */
 	int pid_fork, pid_wait;     /* pid for created and waited process */
 	int status;                 /* status returned by wait */
 	enum status status_res;     /* status processed by analyze_status() */
@@ -349,4 +370,3 @@ int main(void){
 	}
 	return 0;
 }
-
