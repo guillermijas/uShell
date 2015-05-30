@@ -101,20 +101,18 @@ void get_command(char inputBuffer[], int size, char *args[],int *background, int
 // -----------------------------------------------------------------------
 /* devuelve puntero a un nodo con sus valores inicializados,
 devuelve NULL si no pudo realizarse la reserva de memoria*/
-job * new_job(pid_t pid, const char * command, enum job_state state){
+job * new_job(pid_t pid, const char * command, enum job_state state, char *argums[128]){
 	job * aux;
 	aux=(job *) malloc(sizeof(job));
 	aux->pgid=pid;
 	aux->state=state;
 	aux->command=strdup(command);
-
-	/*
-	int i=0;
-	while(&argums[i]==NULL){
-	    aux->args[i]=strdup(argums[i]);
-	    i++;
-	}
-	*/
+    int i = 0;
+    while(argums[i]!=0){
+        aux->args[i] = strdup(argums[i]);
+        i++;
+        fflush(stdout);
+    }
 	aux->next=NULL;
 	return aux;
 }
@@ -138,7 +136,11 @@ int delete_job(job * list, job * item){
 	if(aux->next){
 		aux->next=item->next;
 		free(item->command);
-		//free(item->args);
+		int i = 0;
+        while(item->args[i]!=0){
+		    free(item->args[i]);
+		    i++;
+		}
 		free(item);
 		list->pgid--;
 		return 1;
