@@ -113,6 +113,7 @@ job * new_job(pid_t pid, const char * command, enum job_state state, char *argum
         i++;
         fflush(stdout);
     }
+    aux->args[i] = NULL;
 	aux->next=NULL;
 	return aux;
 }

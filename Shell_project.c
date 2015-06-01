@@ -49,6 +49,14 @@ void my_sigchld(int signum){
                 if(jb->state == RESPAWNABLE){ 
                 	job* aux;
                     int pid_fork;
+                    
+                    if(status_res==EXITED && info == EXIT_FAILURE){
+                        delete_job(lista, jb);
+				        i--;
+                        continue;
+                    }
+                    
+                    
                     pid_fork = fork();
                     if(pid_fork == -1){
                         printf("Error en fork()\n");
@@ -62,7 +70,7 @@ void my_sigchld(int signum){
                     }else{
                         new_process_group(getpid());
                         restore_terminal_signals();
-                        execvp(aux->args[0], aux->args);
+                        execvp(jb->args[0], jb->args);
                         printf("Error, comando desconocido: %s. Fallo en execv\n", aux->args[0]);
                         exit(EXIT_FAILURE);
                     }
