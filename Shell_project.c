@@ -49,13 +49,12 @@ void my_sigchld(int signum){
                 if(jb->state == RESPAWNABLE){ 
                 	job* aux;
                     int pid_fork;
-                    
-                    if(status_res==EXITED && info == EXIT_FAILURE){
+
+                    if(info == EXIT_FAILURE){
                         delete_job(lista, jb);
 				        i--;
                         continue;
                     }
-                    
                     
                     pid_fork = fork();
                     if(pid_fork == -1){
@@ -92,7 +91,7 @@ void put_job_in_background (job *j){
 	block_SIGCHLD();
 	if (killpg(j->pgid, SIGCONT))
 		perror ("kill (SIGCONT)");
-	block_SIGCHLD();
+	unblock_SIGCHLD();
 }
 
 void stop_job_in_background(job *j){
@@ -100,7 +99,7 @@ void stop_job_in_background(job *j){
 	block_SIGCHLD();
 	if (killpg(j->pgid, SIGSTOP))
 		perror ("kill (SIGSTOP)");
-	block_SIGCHLD();
+	unblock_SIGCHLD();
 }
 
 void kill_job(job *j){
@@ -153,8 +152,6 @@ void add_proceso_listaTrabajo(job *nuevo, job *lista){
 	block_SIGCHLD();
 	add_job(lista, nuevo);
 	unblock_SIGCHLD();
-	//print_job_list(lista); //debug
-	//printf("%d\n",list_size(lista)); //debug
 }
 
 
@@ -211,9 +208,8 @@ int main(void){
 			printf("- stop [numJob] -> suspende el trabajo indicado\n");
 			printf("- kill -> fuerza el cierre del primer proceso de la lista de trabajos\n");
 			printf("- kill [numJob] -> fuerza el cierre del trabajo indicado\n");
-			printf("- historial -> muestra todo el historial");
-			printf("- historial [num] -> muestra la posicion [num] del historial");
-			printf("- exit -> cierra todos los trabajos y sale de üshell\n");
+			printf("- historial -> muestra todo el historial\n");
+			printf("- historial [num] -> muestra la posicion [num] del historial\n");
 		}
 
 		else if(strcmp(args[0], "cd") == 0){
@@ -322,6 +318,7 @@ int main(void){
 
 		else if(strcmp(args[0], "exit")==0){
 			while(!empty_list(lista))
+				modificar_job(lista, lista->next, BACKGROUND);
 				kill_job(lista->next);
 			bucle = 0;
 		}

@@ -261,12 +261,6 @@ void block_signal(int signal, int block){
 
 
 
-
-
-
-
-
-
 // -----------------------------------------------------------------------
 /* devuelve puntero a un nodo con sus valores inicializados,
 devuelve NULL si no pudo realizarse la reserva de memoria*/
