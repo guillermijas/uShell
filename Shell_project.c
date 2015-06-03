@@ -188,9 +188,14 @@ int main(void){
 		fflush(stdout);
 		get_command(inputBuffer, MAX_LINE, args, &background, &respawn);  /* get next command */
 		//printf("Comando= %s, bg= %d\n", inputBuffer, background);
-		add_to_historial(hist, *args);
-		if(args[0]==NULL) continue;   // if empty command
-
+		
+		if(args[0]!=NULL){
+		    add_to_historial(hist, *args);
+		}
+		
+		if(args[0]==NULL)  // if empty command
+            continue;
+            
 		else if(strcmp(args[0], "hola") == 0)
 			printf("Hola mundo\n");
 
