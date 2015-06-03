@@ -264,10 +264,16 @@ void block_signal(int signal, int block){
 // -----------------------------------------------------------------------
 /* devuelve puntero a un nodo con sus valores inicializados,
 devuelve NULL si no pudo realizarse la reserva de memoria*/
-historial * new_historial(const char * command){
+historial * new_historial(const char * command, char *argums[128]){
 	historial *aux;
 	aux=(historial *) malloc(sizeof(historial));
-	aux->command = strdup(command);
+	aux->command=strdup(command);
+	int i = 0;
+    while(argums[i]!=0){
+        aux->args[i] = strdup(argums[i]);
+        i++;
+        fflush(stdout);
+    }
 	aux->next = NULL;
 	return aux;
 }
@@ -279,10 +285,9 @@ void print_historial(historial * hist){
 	historial * aux = hist;
 	printf("%s:\n",aux->command);
 	do{
-
 		aux=aux->next;
 		printf(" [%d] ",n);
-		const char *comando = aux->command;
+		const char *comando = aux->args[0];
 		printf("%s\n", comando);
 		n++;
 	}while(aux->next!= NULL);
@@ -293,8 +298,8 @@ void print_historial(historial * hist){
 
 // -----------------------------------------------------------------------
 /* inserta elemento en la cabeza de la lista */
-void add_to_historial(historial * hist, char * command){
-	historial * item = new_historial(command);
+void add_to_historial(historial * hist, char *argums[128]){
+	historial * item = new_historial(argums[0], argums);
 	historial * aux = hist;
 	while(aux->next!= NULL)
 		aux  = aux->next;
@@ -315,8 +320,4 @@ historial * history_position(historial * hist, int n){
 	return aux->next;
 }
 
-// -----------------------------------------------------------------------
-/*imprime una linea en el terminal con los datos del elemento: pid, nombre ... */
-void print_item_historial(historial * item){
-	printf("%s\n", item->command);
-}
+

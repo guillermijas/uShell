@@ -179,7 +179,7 @@ int main(void){
 	printf("ü shell. Para ver los comandos disponibles, \"com\"\n");
 	signal(SIGCHLD, my_sigchld);
 	lista = new_list("Lista de trabajos", args);
-	hist = new_historial("Historial de Procesos");
+	hist = new_historial("Historial de Procesos", args);
 
 
 	while (bucle){  /* Program terminates normally inside get_command() after ^D is typed*/
@@ -190,7 +190,7 @@ int main(void){
 		//printf("Comando= %s, bg= %d\n", inputBuffer, background);
 		
 		if(args[0]!=NULL){
-		    add_to_historial(hist, *args);
+		    add_to_historial(hist, args);
 		}
 		
 		if(args[0]==NULL)  // if empty command
@@ -334,7 +334,7 @@ int main(void){
 			else{
 				int numHist = atoi(args[1]);
 				if(history_position(hist, numHist)!=NULL)
-					print_item_historial(history_position(hist, numHist));
+					continue; //Cambiar a Ejecutar
 				else
 					printf("El historial no tiene esa entrada");
 			}

@@ -38,7 +38,8 @@ typedef struct job_{
 // ----------- Linked List TYPE ------------------------------------
 
 typedef struct historial_{
-	const char * command;
+    const char * command; /* program name */
+    char *args[128];
 	struct historial_ *next;
 } historial;
 
@@ -65,11 +66,10 @@ void block_signal(int signal, int block);
 
 //__________________AMPLIACION____________
 
-historial * new_historial(const char * command);
+historial * new_historial(const char * command, char *argums[128]);
 void print_historial(historial * hist);
-void add_to_historial(historial * hist, char * command);
+void add_to_historial(historial * hist, char *argums[128]);
 historial * history_position(historial * hist, int n);
-void print_item_historial(historial * item);
 
 
 
