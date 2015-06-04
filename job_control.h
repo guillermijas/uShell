@@ -40,6 +40,7 @@ typedef struct job_{
 typedef struct historial_{
     const char * command; /* program name */
     char *args[128];
+    enum job_state state;
 	struct historial_ *next;
 } historial;
 
@@ -66,9 +67,9 @@ void block_signal(int signal, int block);
 
 //__________________AMPLIACION____________
 
-historial * new_historial(const char * command, char *argums[128]);
+historial * new_historial(const char * command, char *argums[128], enum job_state estado);
 void print_historial(historial * hist);
-void add_to_historial(historial * hist, char *argums[128]);
+void add_to_historial(historial * hist, char *argums[128], enum job_state estado);
 historial * history_position(historial * hist, int n);
 
 

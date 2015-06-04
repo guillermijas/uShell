@@ -264,7 +264,7 @@ void block_signal(int signal, int block){
 // -----------------------------------------------------------------------
 /* devuelve puntero a un nodo con sus valores inicializados,
 devuelve NULL si no pudo realizarse la reserva de memoria*/
-historial * new_historial(const char * command, char *argums[128]){
+historial * new_historial(const char * command, char *argums[128], enum job_state estado){
 	historial *aux;
 	aux=(historial *) malloc(sizeof(historial));
 	aux->command=strdup(command);
@@ -272,8 +272,8 @@ historial * new_historial(const char * command, char *argums[128]){
     while(argums[i]!=0){
         aux->args[i] = strdup(argums[i]);
         i++;
-        fflush(stdout);
     }
+    aux->state = estado;
 	aux->next = NULL;
 	return aux;
 }
@@ -298,8 +298,8 @@ void print_historial(historial * hist){
 
 // -----------------------------------------------------------------------
 /* inserta elemento en la cabeza de la lista */
-void add_to_historial(historial * hist, char *argums[128]){
-	historial * item = new_historial(argums[0], argums);
+void add_to_historial(historial * hist, char *argums[128], enum job_state estado){
+	historial * item = new_historial(argums[0], argums, estado);
 	historial * aux = hist;
 	while(aux->next!= NULL)
 		aux  = aux->next;

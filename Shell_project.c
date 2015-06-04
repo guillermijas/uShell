@@ -11,6 +11,14 @@
 #include <termios.h>
 #include <unistd.h>
 #define MAX_LINE 256 
+#define ROJO "\x1b[31;1;1m"
+#define NEGRO "\x1b[0m"
+#define VERDE "\x1b[32;1;1m"
+#define AZUL "\x1b[34;1;1m"
+#define CYAN "\x1b[36;1;1m"
+#define MARRON "\x1b[33;1;1m"
+#define PURPURA "\x1b[35;1;1m"
+#define BLANCO "\x1b[37;1;1m"
 
 job *lista;
 historial *hist;
@@ -34,7 +42,7 @@ void my_sigchld(int signum){
 	enum status status_res;
 	job* jb, aux;
 
-	printf("SIGCHLD recibido\n");
+	printf("%sSIGCHLD recibido\n%s", ROJO, BLANCO);
 	for(i = 1; i<=list_size(lista); i++){
 		jb = get_item_bypos(lista, i);
 		pid_wait = waitpid(jb->pgid, &istatus, WUNTRACED | WNOHANG);
@@ -78,7 +86,7 @@ void my_sigchld(int signum){
 				i--;
 		    }
 			unblock_SIGCHLD();
-			printf("%c[%d;%dm\nüsh > %c[%dm",27,1,32,27,0);
+			printf("\n%süsh > %s",VERDE, BLANCO );
 		}//print_job_list(lista); //-> debug
 	}
 
@@ -179,18 +187,18 @@ int main(void){
 	printf("ü shell. Para ver los comandos disponibles, \"com\"\n");
 	signal(SIGCHLD, my_sigchld);
 	lista = new_list("Lista de trabajos", args);
-	hist = new_historial("Historial de Procesos", args);
+	hist = new_historial("Historial de Procesos", args, FOREGROUND);
 
 
 	while (bucle){  /* Program terminates normally inside get_command() after ^D is typed*/
 		ignore_terminal_signals(); //Ignorar señales ^C, ^Z, SIGTTIN, SIGTTOU...
-		printf("%c[%d;%dm\nüsh > %c[%dm",27,1,32,27,0); //cambio de color, opcional
+		printf("\n%süsh > %s", VERDE, BLANCO ); //cambio de color, opcional
 		fflush(stdout);
 		get_command(inputBuffer, MAX_LINE, args, &background, &respawn);  /* get next command */
 		//printf("Comando= %s, bg= %d\n", inputBuffer, background);
 		
 		if(args[0]!=NULL){
-		    add_to_historial(hist, args);
+		    add_to_historial(hist, args, respawn==1? RESPAWNABLE : background==1? BACKGROUND : FOREGROUND);
 		}
 		
 		if(args[0]==NULL)  // if empty command
@@ -201,20 +209,20 @@ int main(void){
 
 		else if(strcmp(args[0], "com") == 0){
 			printf("Comandos disponibles:\n");
-			printf("- hola -> escribe \"Hola mundo\"\n");
-			printf("- com -> muestra los comandos disponibles\n");
-			printf("- cd [directorio] -> cambia el entorno al directorio indicado\n");
-			printf("- jobs -> muestra los trabajos ejecutados desde la üsh\n");
-			printf("- fg -> trae a foreground el primer proceso de la lista de trabajos\n");
-			printf("- fg [numJob] -> trae a foreground el trabajo indicado\n");
-			printf("- bg -> trae a background el primer proceso de la lista de trabajos\n");
-			printf("- bg [numJob] -> trae a background el trabajo indicado\n");
-			printf("- stop -> suspende el primer proceso de la lista de trabajos\n");
-			printf("- stop [numJob] -> suspende el trabajo indicado\n");
-			printf("- kill -> fuerza el cierre del primer proceso de la lista de trabajos\n");
-			printf("- kill [numJob] -> fuerza el cierre del trabajo indicado\n");
-			printf("- historial -> muestra todo el historial\n");
-			printf("- historial [num] -> muestra la posicion [num] del historial\n");
+			printf("- %shola%s -> %sescribe \"Hola mundo\"\n", CYAN, AZUL, BLANCO);
+			printf("- %scom%s -> %smuestra los comandos disponibles\n", CYAN, AZUL, BLANCO);
+			printf("- %scd [directorio]%s -> %scambia el entorno al directorio indicado\n", CYAN, AZUL, BLANCO);
+			printf("- %sjobs%s -> %s muestra los trabajos ejecutados desde la üsh\n", CYAN, AZUL, BLANCO);
+			printf("- %sfg%s -> %s trae a foreground el primer proceso de la lista de trabajos\n", CYAN, AZUL, BLANCO);
+			printf("- %sfg [numJob]%s -> %s trae a foreground el trabajo indicado\n", CYAN, AZUL, BLANCO);
+			printf("- %sbg%s -> %s trae a background el primer proceso de la lista de trabajos\n", CYAN, AZUL, BLANCO);
+			printf("- %sbg [numJob]%s -> %s trae a background el trabajo indicado\n", CYAN, AZUL, BLANCO);
+			printf("- %sstop%s -> %s suspende el primer proceso de la lista de trabajos\n", CYAN, AZUL, BLANCO);
+			printf("- %sstop [numJob]%s -> %s suspende el trabajo indicado\n", CYAN, AZUL, BLANCO);
+			printf("- %skill%s -> %s fuerza el cierre del primer proceso de la lista de trabajos\n", CYAN, AZUL, BLANCO);
+			printf("- %skill [numJob]%s -> %s fuerza el cierre del trabajo indicado\n", CYAN, AZUL, BLANCO);
+			printf("- %shis%s -> %s muestra todo el historial\n", CYAN, AZUL, BLANCO);
+			printf("- %shis [num] %s-> %sejecuta la instruccion indicada guardada en el historial\n", CYAN, AZUL, BLANCO);
 		}
 
 		else if(strcmp(args[0], "cd") == 0){
@@ -328,13 +336,43 @@ int main(void){
 			bucle = 0;
 		}
 
-		else if(strcmp(args[0], "historial") == 0){
+		else if(strcmp(args[0], "his") == 0){
 			if(args[1]==NULL)
 				print_historial(hist);
 			else{
 				int numHist = atoi(args[1]);
-				if(history_position(hist, numHist)!=NULL)
-					continue; //Cambiar a Ejecutar
+				if(history_position(hist, numHist)!=NULL){
+					job* aux;
+					historial* historaux = history_position(hist, numHist);
+                    int pid_fork;
+                    pid_fork = fork();
+                    if(pid_fork == -1){
+                        printf("Error en fork()\n");
+                    }
+                    else if(pid_fork > 0){
+                        new_process_group(pid_fork);
+                        aux = new_job(pid_fork, historaux->args[0], historaux->state, historaux->args);
+                        background = historaux->state == BACKGROUND? 1 : 0;
+                        respawn = historaux->state == RESPAWNABLE? 1 : 0;
+                        add_proceso_listaTrabajo(aux, lista);
+                        if(!background && !respawn){
+					        put_job_in_foreground(aux);
+					        tcsetattr(pid_terminal, TCSANOW, &conf_ini);
+				        }else if(background){
+					        printf("Proceso en Background\n");
+					        fflush(stdout);
+				        }else if(respawn){
+					        printf("Proceso respawnable en Background\n");
+					        fflush(stdout);
+				        }
+                    }else{
+                        new_process_group(getpid());
+                        restore_terminal_signals();
+                        execvp(historaux->command, historaux->args);
+                        printf("Error, comando desconocido: %s. Fallo en execv\n", historaux->args[0]);
+                        exit(EXIT_FAILURE);
+                    }
+                }
 				else
 					printf("El historial no tiene esa entrada");
 			}
