@@ -288,7 +288,11 @@ void print_historial(historial * hist){
 		aux=aux->next;
 		printf(" [%d] ",n);
 		const char *comando = aux->args[0];
-		printf("%s\n", comando);
+		printf("%s", comando);
+		if(aux->state != FOREGROUND)
+    		printf(" - %s\n", state_strings[aux->state]);
+    	else
+    	    printf("\n");	
 		n++;
 	}while(aux->next!= NULL);
 
