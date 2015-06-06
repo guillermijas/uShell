@@ -25,6 +25,7 @@ historial *hist;
 
 /*Prototipos de los métodos*/
 
+void alarm_handler(int signum);
 void my_sigchld(int signum);
 void put_in_foreground(job *j, int stopped);
 void put_job_in_background (job *j);
@@ -35,6 +36,11 @@ void add_proceso_listaTrabajo(job *nuevo, job *lista);
 
 
 /*Métodos*/
+
+
+void alarm_handler(int signum){
+    printf("Deberia matar el proceso aqui\n");
+}
 
 void my_sigchld(int signum){
 
@@ -185,10 +191,10 @@ int main(void){
 	tcgetattr(pid_terminal, &conf_ini);
 	printf("\e[1;1H\e[2J"); // "Clear" terminal (en realidad pone varios espacios y baja el scroll)
 	printf("ü shell. Para ver los comandos disponibles, \"com\"\n");
+	signal(SIGALRM, alarm_handler);
 	signal(SIGCHLD, my_sigchld);
 	lista = new_list("Lista de trabajos", args);
 	hist = new_historial("Historial de Procesos", args, FOREGROUND);
-
 
 	while (bucle){  /* Program terminates normally inside get_command() after ^D is typed*/
 		ignore_terminal_signals(); //Ignorar señales ^C, ^Z, SIGTTIN, SIGTTOU...
@@ -196,15 +202,40 @@ int main(void){
 		fflush(stdout);
 		get_command(inputBuffer, MAX_LINE, args, &background, &respawn);  /* get next command */
 		//printf("Comando= %s, bg= %d\n", inputBuffer, background);
-		
 		if(args[0]!=NULL){
 		    add_to_historial(hist, args, respawn==1? RESPAWNABLE : background==1? BACKGROUND : FOREGROUND);
 		}
-		
+
 		if(args[0]==NULL)  // if empty command
             continue;
-            
-		else if(strcmp(args[0], "hola") == 0)
+        
+        if(strcmp(args[0], "time-out") == 0){
+        	if(args[1]==NULL){
+        	    printf("Error: time-out [Segundos] [Comando]\n");
+				fflush(stdout);
+				continue;
+        	}
+        	else{
+        		if(args[2]!= NULL){
+                alarm(atoi(args[1]));
+                int i = 0;
+                while (args[i+2] != 0){
+                    args[i] = strdup(args[i+2]);
+                    args[i+2] = NULL;
+                    i++;
+                }
+                args[i] = NULL;
+        		}else{
+        			printf("Error: time-out [Segundos] [Comando]\n");
+        			fflush(stdout);
+        			continue;
+        		}
+        	}
+
+        }
+      
+        
+		if(strcmp(args[0], "hola") == 0)
 			printf("Hola mundo\n");
 
 		else if(strcmp(args[0], "com") == 0){
@@ -223,6 +254,7 @@ int main(void){
 			printf("- %skill [numJob]%s -> %s fuerza el cierre del trabajo indicado\n", CYAN, AZUL, BLANCO);
 			printf("- %shis%s -> %s muestra todo el historial\n", CYAN, AZUL, BLANCO);
 			printf("- %shis [num] %s-> %sejecuta la instruccion indicada guardada en el historial\n", CYAN, AZUL, BLANCO);
+			printf("- %sexit%s -> %scierra todos los trabajos y sale del üsh\n", CYAN, AZUL, BLANCO);
 		}
 
 		else if(strcmp(args[0], "cd") == 0){
@@ -330,9 +362,11 @@ int main(void){
 		}
 
 		else if(strcmp(args[0], "exit")==0){
-			while(!empty_list(lista))
+			while(!empty_list(lista)){
 				modificar_job(lista, lista->next, BACKGROUND);
 				kill_job(lista->next);
+				delete_job(lista, lista->next);
+			}
 			bucle = 0;
 		}
 
@@ -368,7 +402,7 @@ int main(void){
                     }else{
                         new_process_group(getpid());
                         restore_terminal_signals();
-                        execvp(historaux->command, historaux->args);
+                        execvp(historaux->args[0], historaux->args);
                         printf("Error, comando desconocido: %s. Fallo en execv\n", historaux->args[0]);
                         exit(EXIT_FAILURE);
                     }
@@ -379,7 +413,6 @@ int main(void){
 		}
 
 		else{ // EJECUTA
-
 			pid_fork = fork();
 			if(pid_fork == -1){
 				printf("Error en fork()\n");

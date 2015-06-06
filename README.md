@@ -1,1 +1,2 @@
-corregir constructor del historial
+Investigar Time-Out
+
