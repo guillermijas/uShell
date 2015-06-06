@@ -49,12 +49,13 @@ void my_sigchld(int signum){
 	job* jb, aux;
 
 	printf("%sSIGCHLD recibido\n%s", ROJO, BLANCO);
+
 	for(i = 1; i<=list_size(lista); i++){
 		jb = get_item_bypos(lista, i);
 		pid_wait = waitpid(jb->pgid, &istatus, WUNTRACED | WNOHANG);
 		if(pid_wait == jb->pgid){
 			status_res = analyze_status(istatus, &info);
-			printf("Wait realizado para trabajo en background: %s, Estado: %s\n", jb->command, status_strings[status_res]);
+			printf("Wait realizado para trabajo en background: %s, Estado: %s\n", jb->args[0], status_strings[status_res]);
 			block_SIGCHLD();
 			if (status_res == SUSPENDED)
 				modificar_job(lista, jb, STOPPED);
@@ -92,10 +93,9 @@ void my_sigchld(int signum){
 				i--;
 		    }
 			unblock_SIGCHLD();
-			printf("\n%süsh > %s",VERDE, BLANCO );
 		}//print_job_list(lista); //-> debug
 	}
-
+	printf("\n%süsh > %s",VERDE, BLANCO );
 	fflush(stdout);
 	return;
 }
@@ -189,22 +189,24 @@ int main(void){
 	args[0] = 0;
 	pid_terminal = STDIN_FILENO;
 	tcgetattr(pid_terminal, &conf_ini);
+	
 	printf("\e[1;1H\e[2J"); // "Clear" terminal (en realidad pone varios espacios y baja el scroll)
-	printf("ü shell. Para ver los comandos disponibles, \"com\"\n");
+	printf("%sü shell. Para ver los comandos disponibles, \"com\"\n", BLANCO);
 	signal(SIGALRM, alarm_handler);
 	signal(SIGCHLD, my_sigchld);
 	lista = new_list("Lista de trabajos", args);
 	hist = new_historial("Historial de Procesos", args, FOREGROUND);
 
 	while (bucle){  /* Program terminates normally inside get_command() after ^D is typed*/
+		int alarma = -1;
 		ignore_terminal_signals(); //Ignorar señales ^C, ^Z, SIGTTIN, SIGTTOU...
 		printf("\n%süsh > %s", VERDE, BLANCO ); //cambio de color, opcional
 		fflush(stdout);
 		get_command(inputBuffer, MAX_LINE, args, &background, &respawn);  /* get next command */
 		//printf("Comando= %s, bg= %d\n", inputBuffer, background);
-		if(args[0]!=NULL){
+		if(args[0]!=NULL)
 		    add_to_historial(hist, args, respawn==1? RESPAWNABLE : background==1? BACKGROUND : FOREGROUND);
-		}
+		
 
 		if(args[0]==NULL)  // if empty command
             continue;
@@ -217,7 +219,7 @@ int main(void){
         	}
         	else{
         		if(args[2]!= NULL){
-                alarm(atoi(args[1]));
+                alarma = atoi(args[1]);
                 int i = 0;
                 while (args[i+2] != 0){
                     args[i] = strdup(args[i+2]);
@@ -231,8 +233,31 @@ int main(void){
         			continue;
         		}
         	}
-
         }
+        
+        
+        if(strcmp(args[0], "his") == 0){
+			if(args[1]==NULL)
+				print_historial(hist);
+			else{
+				int numHist = atoi(args[1]);
+				if(history_position(hist, numHist)!=NULL){
+					historial* historaux = history_position(hist, numHist);
+                    background = historaux->state == BACKGROUND? 1 : 0;
+                    respawn = historaux->state == RESPAWNABLE? 1 : 0;
+                    int i = 0;
+                    while (historaux->args[i] != 0){
+                        args[i] = strdup(historaux->args[i]);
+                        i++;
+                    }
+                    args[i] = NULL;
+                    strcpy(inputBuffer, args[0]);
+                }
+				else
+					printf("El historial no tiene esa entrada");
+			}
+		}
+		
       
         
 		if(strcmp(args[0], "hola") == 0)
@@ -370,47 +395,7 @@ int main(void){
 			bucle = 0;
 		}
 
-		else if(strcmp(args[0], "his") == 0){
-			if(args[1]==NULL)
-				print_historial(hist);
-			else{
-				int numHist = atoi(args[1]);
-				if(history_position(hist, numHist)!=NULL){
-					job* aux;
-					historial* historaux = history_position(hist, numHist);
-                    int pid_fork;
-                    pid_fork = fork();
-                    if(pid_fork == -1){
-                        printf("Error en fork()\n");
-                    }
-                    else if(pid_fork > 0){
-                        new_process_group(pid_fork);
-                        aux = new_job(pid_fork, historaux->args[0], historaux->state, historaux->args);
-                        background = historaux->state == BACKGROUND? 1 : 0;
-                        respawn = historaux->state == RESPAWNABLE? 1 : 0;
-                        add_proceso_listaTrabajo(aux, lista);
-                        if(!background && !respawn){
-					        put_job_in_foreground(aux);
-					        tcsetattr(pid_terminal, TCSANOW, &conf_ini);
-				        }else if(background){
-					        printf("Proceso en Background\n");
-					        fflush(stdout);
-				        }else if(respawn){
-					        printf("Proceso respawnable en Background\n");
-					        fflush(stdout);
-				        }
-                    }else{
-                        new_process_group(getpid());
-                        restore_terminal_signals();
-                        execvp(historaux->args[0], historaux->args);
-                        printf("Error, comando desconocido: %s. Fallo en execv\n", historaux->args[0]);
-                        exit(EXIT_FAILURE);
-                    }
-                }
-				else
-					printf("El historial no tiene esa entrada");
-			}
-		}
+		
 
 		else{ // EJECUTA
 			pid_fork = fork();
@@ -419,7 +404,7 @@ int main(void){
 			}
 			else if(pid_fork > 0){
 				new_process_group(pid_fork);
-				nuevo = new_job(pid_fork, inputBuffer, respawn==1? RESPAWNABLE : background==1? BACKGROUND : FOREGROUND, args);
+				nuevo = new_job(pid_fork, args[0], respawn==1? RESPAWNABLE : background==1? BACKGROUND : FOREGROUND, args);
 
 				add_proceso_listaTrabajo(nuevo, lista);
 
@@ -438,8 +423,10 @@ int main(void){
                 restore_terminal_signals();
                 if(!background && !respawn)
                     set_terminal(getpid());
+                if(alarma>-1)
+                    alarm(alarma);
                 execvp(args[0], args);
-                printf("Error, comando desconocido: %s. Fallo en execv\n", inputBuffer);
+                printf("Error, comando desconocido: %s. Fallo en execv\n", args[0]);
                 exit(EXIT_FAILURE);
 			}// FIN EJECUTA
 		}
