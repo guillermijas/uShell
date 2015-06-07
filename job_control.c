@@ -269,10 +269,11 @@ historial * new_historial(const char * command, char *argums[128], enum job_stat
 	aux=(historial *) malloc(sizeof(historial));
 	aux->command=strdup(command);
 	int i = 0;
-    while(argums[i]!=0){
+    while(argums[i]!=NULL){
         aux->args[i] = strdup(argums[i]);
         i++;
     }
+	aux->args[i] = NULL;
     aux->state = estado;
 	aux->next = NULL;
 	return aux;
@@ -287,10 +288,13 @@ void print_historial(historial * hist){
 	do{
 		aux=aux->next;
 		printf(" [%d] ",n);
-		const char *comando = aux->args[0];
-		printf("%s", comando);
+		int i =0;
+		while(aux->args[i] != NULL){
+		    printf("%s ", aux->args[i]);
+		    i++;
+		}
 		if(aux->state != FOREGROUND)
-    		printf(" - %s\n", state_strings[aux->state]);
+    		printf("(%s)\n", state_strings[aux->state]);
     	else
     	    printf("\n");	
 		n++;

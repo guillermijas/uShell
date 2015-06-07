@@ -203,13 +203,11 @@ int main(void){
 		printf("\n%süsh > %s", VERDE, BLANCO ); //cambio de color, opcional
 		fflush(stdout);
 		get_command(inputBuffer, MAX_LINE, args, &background, &respawn);  /* get next command */
-		//printf("Comando= %s, bg= %d\n", inputBuffer, background);
-		if(args[0]!=NULL)
-		    add_to_historial(hist, args, respawn==1? RESPAWNABLE : background==1? BACKGROUND : FOREGROUND);
-		
 
 		if(args[0]==NULL)  // if empty command
             continue;
+        if(strcmp(args[0], "his") != 0)
+            add_to_historial(hist, args, respawn==1? RESPAWNABLE : background==1? BACKGROUND : FOREGROUND);
         
         if(strcmp(args[0], "time-out") == 0){
         	if(args[1]==NULL){
@@ -234,33 +232,76 @@ int main(void){
         		}
         	}
         }
-        
-        
+
         if(strcmp(args[0], "his") == 0){
-			if(args[1]==NULL)
+
+			if(args[1]==NULL){
+			    add_to_historial(hist, args, respawn==1? RESPAWNABLE : background==1? BACKGROUND : FOREGROUND);
 				print_historial(hist);
+				fflush(stdout);
+				continue;
+		    }
 			else{
+                fflush(stdout);
 				int numHist = atoi(args[1]);
 				if(history_position(hist, numHist)!=NULL){
-					historial* historaux = history_position(hist, numHist);
+			    	int numHist = atoi(args[1]);
+				    historial* historaux = history_position(hist, numHist);
                     background = historaux->state == BACKGROUND? 1 : 0;
                     respawn = historaux->state == RESPAWNABLE? 1 : 0;
                     int i = 0;
+                    printf("Ejecutando: ");fflush(stdout);
                     while (historaux->args[i] != 0){
+                        printf("%s ", historaux->args[i]);
                         args[i] = strdup(historaux->args[i]);
-                        i++;
+                        i++; fflush(stdout);
                     }
+                    printf("\n");
                     args[i] = NULL;
-                    strcpy(inputBuffer, args[0]);
-                }
-				else
+                    add_to_historial(hist, args, respawn==1? RESPAWNABLE : background==1? BACKGROUND : FOREGROUND);
+                    
+                    
+                    // repetir time-out por si es lo que está guardado en el historial
+                     if(strcmp(args[0], "time-out") == 0){
+                    	if(args[1]==NULL){
+                    	    printf("Error: time-out [Segundos] [Comando]\n");
+				            fflush(stdout);
+				            continue;
+                    	}
+                    	else{
+                    		if(args[2]!= NULL){
+                            int alarma2 = atoi(args[1]);
+                            alarma = alarma<=alarma2 && alarma != -1? alarma : alarma2;
+                            int i = 0;
+                            while (args[i+2] != 0){
+                                args[i] = strdup(args[i+2]);
+                                args[i+2] = NULL;
+                                i++;
+                            }
+                            args[i] = NULL;
+                    		}else{
+                    			printf("Error: time-out [Segundos] [Comando]\n");
+                    			fflush(stdout);
+                    			continue;
+                    		}
+                    	}
+                    }
+                    // fin time-out
+                    
+                    if((strcmp(args[0], "his") == 0) && args[1]==NULL){
+				        print_historial(hist);
+				        fflush(stdout);
+				        continue;
+		            }
+				}else{
 					printf("El historial no tiene esa entrada");
+					continue;
+			    }
 			}
+            fflush(stdout);
 		}
 		
-      
-        
-		if(strcmp(args[0], "hola") == 0)
+        if(strcmp(args[0], "hola") == 0)
 			printf("Hola mundo\n");
 
 		else if(strcmp(args[0], "com") == 0){
@@ -268,17 +309,18 @@ int main(void){
 			printf("- %shola%s -> %sescribe \"Hola mundo\"\n", CYAN, AZUL, BLANCO);
 			printf("- %scom%s -> %smuestra los comandos disponibles\n", CYAN, AZUL, BLANCO);
 			printf("- %scd [directorio]%s -> %scambia el entorno al directorio indicado\n", CYAN, AZUL, BLANCO);
-			printf("- %sjobs%s -> %s muestra los trabajos ejecutados desde la üsh\n", CYAN, AZUL, BLANCO);
-			printf("- %sfg%s -> %s trae a foreground el primer proceso de la lista de trabajos\n", CYAN, AZUL, BLANCO);
-			printf("- %sfg [numJob]%s -> %s trae a foreground el trabajo indicado\n", CYAN, AZUL, BLANCO);
-			printf("- %sbg%s -> %s trae a background el primer proceso de la lista de trabajos\n", CYAN, AZUL, BLANCO);
-			printf("- %sbg [numJob]%s -> %s trae a background el trabajo indicado\n", CYAN, AZUL, BLANCO);
+			printf("- %sjobs%s -> %smuestra los trabajos ejecutados desde la üsh\n", CYAN, AZUL, BLANCO);
+			printf("- %sfg%s -> %strae a foreground el primer proceso de la lista de trabajos\n", CYAN, AZUL, BLANCO);
+			printf("- %sfg [numJob]%s -> %strae a foreground el trabajo indicado\n", CYAN, AZUL, BLANCO);
+			printf("- %sbg%s -> %strae a background el primer proceso de la lista de trabajos\n", CYAN, AZUL, BLANCO);
+			printf("- %sbg [numJob]%s -> %strae a background el trabajo indicado\n", CYAN, AZUL, BLANCO);
 			printf("- %sstop%s -> %s suspende el primer proceso de la lista de trabajos\n", CYAN, AZUL, BLANCO);
-			printf("- %sstop [numJob]%s -> %s suspende el trabajo indicado\n", CYAN, AZUL, BLANCO);
-			printf("- %skill%s -> %s fuerza el cierre del primer proceso de la lista de trabajos\n", CYAN, AZUL, BLANCO);
-			printf("- %skill [numJob]%s -> %s fuerza el cierre del trabajo indicado\n", CYAN, AZUL, BLANCO);
-			printf("- %shis%s -> %s muestra todo el historial\n", CYAN, AZUL, BLANCO);
+			printf("- %sstop [numJob]%s -> %ssuspende el trabajo indicado\n", CYAN, AZUL, BLANCO);
+			printf("- %skill%s -> %sfuerza el cierre del primer proceso de la lista de trabajos\n", CYAN, AZUL, BLANCO);
+			printf("- %skill [numJob]%s -> %sfuerza el cierre del trabajo indicado\n", CYAN, AZUL, BLANCO);
+			printf("- %shis%s -> %smuestra todo el historial\n", CYAN, AZUL, BLANCO);
 			printf("- %shis [num] %s-> %sejecuta la instruccion indicada guardada en el historial\n", CYAN, AZUL, BLANCO);
+			printf("- %stime-out [Seg] [Com]%s-> %sejecuta el comando durante los segundos indicados\n", CYAN, AZUL, BLANCO);  
 			printf("- %sexit%s -> %scierra todos los trabajos y sale del üsh\n", CYAN, AZUL, BLANCO);
 		}
 
@@ -428,8 +470,10 @@ int main(void){
                 execvp(args[0], args);
                 printf("Error, comando desconocido: %s. Fallo en execv\n", args[0]);
                 exit(EXIT_FAILURE);
+                fflush(stdout);
 			}// FIN EJECUTA
 		}
+        fflush(stdout);
 	}
 	return 0;
 }

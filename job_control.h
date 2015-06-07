@@ -38,7 +38,7 @@ typedef struct job_{
 // ----------- Linked List TYPE ------------------------------------
 
 typedef struct historial_{
-    const char * command; /* program name */
+    const char * command;
     char *args[128];
     enum job_state state;
 	struct historial_ *next;
